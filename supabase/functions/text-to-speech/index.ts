@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +8,38 @@ const corsHeaders = {
 };
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+// Rate limiting function
+const checkRateLimit = async (clientIp: string, endpoint: string, maxRequests: number) => {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  
+  const { data, error } = await supabase
+    .from('rate_limits')
+    .select('id')
+    .eq('ip_address', clientIp)
+    .eq('endpoint', endpoint)
+    .gte('created_at', oneHourAgo);
+
+  if (error) {
+    console.error('Rate limit check error:', error);
+    return true; // Allow on error to prevent blocking legitimate users
+  }
+
+  if (data && data.length >= maxRequests) {
+    return false;
+  }
+
+  // Log this request
+  await supabase
+    .from('rate_limits')
+    .insert({ ip_address: clientIp, endpoint });
+
+  return true;
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,6 +48,22 @@ serve(async (req) => {
   }
 
   try {
+    // Get client IP for rate limiting
+    const clientIp = req.headers.get('x-forwarded-for') || 
+                     req.headers.get('x-real-ip') || 
+                     '127.0.0.1';
+
+    // Check rate limit (10 requests per hour)
+    const rateLimitOk = await checkRateLimit(clientIp, 'text-to-speech', 10);
+    if (!rateLimitOk) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { 
+          status: 429, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
     const { text, voice = 'alloy', speed = 1.0 } = await req.json();
 
     if (!text) {

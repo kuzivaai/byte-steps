@@ -111,6 +111,10 @@ const DigitalSkillsCoach: React.FC = () => {
     return <DataManagement onBack={() => setCurrentView('home')} />;
   }
 
+  if (currentView === 'help') {
+    return <HumanHelpRequest onBack={() => setCurrentView('learning')} userPostcode={userProfile?.postcode} />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Skip to main content link for screen readers */}

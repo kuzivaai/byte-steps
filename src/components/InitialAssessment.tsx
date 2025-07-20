@@ -41,39 +41,60 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="w-full max-w-2xl">
+      {/* Skip to main content link */}
+      <a 
+        href="#assessment-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium"
+        aria-label="Skip to assessment questions"
+      >
+        Skip to assessment questions
+      </a>
+
+      <div className="w-full max-w-2xl" role="main">
         {/* Progress */}
-        <div className="mb-8">
+        <div className="mb-8" aria-label="Assessment progress">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground" aria-live="polite">
               Question {currentQuestion + 1} of {assessmentQuestions.length}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground" aria-live="polite">
               {Math.round(progress)}% complete
             </p>
           </div>
-          <Progress value={progress} className="w-full" />
+          <Progress 
+            value={progress} 
+            className="w-full" 
+            aria-label={`Assessment progress: ${Math.round(progress)}% complete`}
+          />
         </div>
 
         {/* Question Card */}
-        <Card className="border-2">
+        <Card id="assessment-content" className="border-2 focus-within:ring-2 focus-within:ring-primary/20">
           <CardHeader>
-            <CardTitle className="text-xl leading-relaxed">
+            <CardTitle 
+              className="text-2xl leading-relaxed" 
+              id={`question-${currentQuestion}`}
+              role="heading" 
+              aria-level={1}
+            >
               {currentQ.question}
             </CardTitle>
             {currentQ.note && (
-              <CardDescription className="text-base">
+              <CardDescription className="text-lg leading-relaxed">
                 {currentQ.note}
               </CardDescription>
             )}
           </CardHeader>
           <CardContent className="space-y-4">
             {currentQ.type === 'radio' && currentQ.options && (
-              <div className="space-y-3">
-                {currentQ.options.map((option) => (
+              <fieldset className="space-y-3">
+                <legend className="sr-only">
+                  {currentQ.question}
+                </legend>
+                {currentQ.options.map((option, index) => (
                   <label
                     key={option.value}
-                    className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors focus-within:ring-2 focus-within:ring-primary/20"
                   >
                     <input
                       type="radio"
@@ -81,19 +102,23 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
                       value={option.value}
                       checked={currentAnswer === option.value}
                       onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
-                      className="mt-1 h-4 w-4 text-primary"
+                      className="mt-1 h-5 w-5 text-primary focus:ring-2 focus:ring-primary/20"
+                      aria-describedby={`option-${currentQuestion}-${index}`}
                     />
-                    <span className="text-base leading-relaxed">
+                    <span 
+                      className="text-lg leading-relaxed"
+                      id={`option-${currentQuestion}-${index}`}
+                    >
                       {option.label}
                     </span>
                   </label>
                 ))}
-              </div>
+              </fieldset>
             )}
 
             {currentQ.type === 'text' && (
               <div className="space-y-2">
-                <Label htmlFor={currentQ.id} className="text-base">
+                <Label htmlFor={currentQ.id} className="text-lg font-medium">
                   {currentQ.question}
                 </Label>
                 <Input
@@ -101,8 +126,14 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
                   placeholder={currentQ.placeholder}
                   value={currentAnswer}
                   onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
-                  className="text-lg py-3"
+                  className="text-lg py-4 focus:ring-4 focus:ring-primary/20 focus:outline-none"
+                  aria-describedby={currentQ.note ? `note-${currentQuestion}` : undefined}
                 />
+                {currentQ.note && (
+                  <p id={`note-${currentQuestion}`} className="text-base text-muted-foreground">
+                    {currentQ.note}
+                  </p>
+                )}
               </div>
             )}
 
@@ -112,8 +143,10 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={currentQuestion === 0}
+                className="text-lg px-6 py-3 focus:ring-4 focus:ring-primary/20 focus:outline-none"
+                aria-label={currentQuestion === 0 ? "Previous question (not available)" : "Go to previous question"}
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
                 Previous
               </Button>
 
@@ -121,14 +154,20 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
                 onClick={handleNext}
                 disabled={!isAnswered}
                 size="lg"
+                className="text-lg px-6 py-3 focus:ring-4 focus:ring-primary/20 focus:outline-none"
+                aria-label={
+                  currentQuestion === assessmentQuestions.length - 1 
+                    ? "Complete assessment" 
+                    : "Go to next question"
+                }
               >
                 {currentQuestion === assessmentQuestions.length - 1 ? (
                   <>
-                    Complete <CheckCircle className="ml-2 h-4 w-4" />
+                    Complete <CheckCircle className="ml-2 h-4 w-4" aria-hidden="true" />
                   </>
                 ) : (
                   <>
-                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                    Next <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                   </>
                 )}
               </Button>
@@ -138,7 +177,7 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
 
         {/* Help Text */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground leading-relaxed">
             These questions help us recommend the best learning path for you. 
             You can change your preferences anytime.
           </p>

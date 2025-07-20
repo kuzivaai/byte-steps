@@ -248,7 +248,7 @@ export const runStressTests = async () => {
   return results;
 };
 
-// Auto-run stress tests in development if URL contains ?stress-test
+// Development mode: run stress tests if URL contains ?stress-test parameter
 if (import.meta.env.DEV && window.location.search.includes('stress-test')) {
   console.log('Auto-running stress tests due to ?stress-test parameter');
   setTimeout(() => runStressTests(), 2000);

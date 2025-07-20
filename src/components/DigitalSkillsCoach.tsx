@@ -93,7 +93,7 @@ const DigitalSkillsCoach: React.FC = () => {
             <h1 className="text-3xl font-bold">Byte Steps</h1>
           </div>
           <p className="text-lg opacity-90">
-            Every digital journey begins with a single byte. We'll guide you one step at a time.
+            Learning digital skills, one manageable step at a time
           </p>
         </div>
       </header>
@@ -104,9 +104,9 @@ const DigitalSkillsCoach: React.FC = () => {
             {/* Welcome Section */}
             <Card className="border-2 border-accent">
               <CardHeader className="text-center">
-                <CardTitle className="text-2xl mb-2">Welcome! 👋</CardTitle>
+                <CardTitle className="text-2xl mb-2">Welcome to Byte Steps</CardTitle>
                 <CardDescription className="text-lg">
-                  Technology doesn't have to be overwhelming. At Byte Steps, we break everything down into small, manageable pieces—just like how computers work with tiny bytes of information. Each lesson is a simple step forward on your digital journey.
+                  We're here to help you build confidence with technology. Whether you're starting fresh or want to learn something new, we'll take it one small step at a time—no pressure, just support.
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center">

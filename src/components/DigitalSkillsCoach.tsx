@@ -28,8 +28,18 @@ const DigitalSkillsCoach: React.FC = () => {
   const [userProfile, setUserProfile] = useLocalStorage<UserProfile | null>('bytesteps-user-profile', null);
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
   const [completedModules, setCompletedModules] = useLocalStorage<string[]>('bytesteps-completed-modules', []);
-  const [hasPrivacyConsent, setHasPrivacyConsent] = useState<boolean | null>(null);
   const [showAccessibilityControls, setShowAccessibilityControls] = useState(false);
+
+  // Initialize privacy consent from localStorage
+  const [hasPrivacyConsent, setHasPrivacyConsent] = useState<boolean | null>(() => {
+    try {
+      const storedConsent = localStorage.getItem('bytesteps-privacy-consent');
+      return storedConsent ? storedConsent === 'true' : null;
+    } catch (error) {
+      console.error('Error reading privacy consent from localStorage:', error);
+      return null;
+    }
+  });
 
   const handleAssessmentComplete = (profile: UserProfile) => {
     setUserProfile(profile);
@@ -47,16 +57,16 @@ const DigitalSkillsCoach: React.FC = () => {
 
   const handlePrivacyConsent = (consent: boolean) => {
     setHasPrivacyConsent(consent);
+    try {
+      localStorage.setItem('bytesteps-privacy-consent', consent.toString());
+    } catch (error) {
+      console.error('Error saving privacy consent to localStorage:', error);
+    }
   };
 
   // Show privacy notice if consent hasn't been determined
   if (hasPrivacyConsent === null) {
-    const storedConsent = localStorage.getItem('bytesteps-privacy-consent');
-    if (!storedConsent) {
-      return <PrivacyNotice onAccept={handlePrivacyConsent} />;
-    } else {
-      setHasPrivacyConsent(storedConsent === 'true');
-    }
+    return <PrivacyNotice onAccept={handlePrivacyConsent} />;
   }
 
   const getRecommendedModules = () => {

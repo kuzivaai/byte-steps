@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Heart, Shield, Users, Phone, MessageSquare, Computer, ArrowRight, CheckCircle, Clock, MapPin } from 'lucide-react';
+import { Heart, Shield, Users, Phone, MessageSquare, Computer, ArrowRight, CheckCircle, Clock, MapPin, HelpCircle } from 'lucide-react';
 import InitialAssessment from './InitialAssessment';
 import LearningModuleView from './LearningModuleView';
 import LocalResourceFinder from './LocalResourceFinder';
@@ -206,6 +206,16 @@ const DigitalSkillsCoach: React.FC = () => {
                 >
                   <MapPin className="h-4 w-4 mr-2" />
                   Find Local Help
+                </Button>
+                <Button 
+                  variant="secondary"
+                  onClick={() => {
+                    // In a real implementation, this would trigger an alert to a volunteer
+                    alert('A friendly volunteer will contact you within 24 hours to help with your question. You can also visit your local library or community centre for immediate help.');
+                  }}
+                >
+                  <HelpCircle className="h-4 w-4 mr-2" />
+                  Get Human Help
                 </Button>
                 <Button 
                   variant="outline"

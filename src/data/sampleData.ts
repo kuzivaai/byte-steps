@@ -300,7 +300,7 @@ export const assessmentQuestions = [
   {
     id: 'confidence',
     question: 'How confident do you feel using digital devices like smartphones, tablets, or computers?',
-    type: 'radio',
+    type: 'radio' as const,
     options: [
       { value: 'none', label: 'Not confident at all - I avoid using them' },
       { value: 'basic', label: 'A little confident - I can do very basic things' },
@@ -311,7 +311,7 @@ export const assessmentQuestions = [
   {
     id: 'device',
     question: 'What type of device do you have access to?',
-    type: 'radio',
+    type: 'radio' as const,
     options: [
       { value: 'smartphone', label: 'Smartphone (iPhone, Android)' },
       { value: 'basic-phone', label: 'Basic phone (can only call and text)' },
@@ -323,7 +323,7 @@ export const assessmentQuestions = [
   {
     id: 'priority',
     question: 'What would you most like to learn first?',
-    type: 'radio',
+    type: 'radio' as const,
     options: [
       { value: 'basic-phone', label: 'Basic phone skills (calls, texts, turning on/off)' },
       { value: 'internet', label: 'Using the internet safely' },
@@ -333,9 +333,21 @@ export const assessmentQuestions = [
     ]
   },
   {
+    id: 'accessibility',
+    question: 'Do you need any accessibility features to help you learn?',
+    type: 'radio' as const,
+    options: [
+      { value: 'none', label: 'No specific needs' },
+      { value: 'large-text', label: 'Larger text size' },
+      { value: 'high-contrast', label: 'High contrast colours' },
+      { value: 'audio', label: 'Audio descriptions and voice guidance' },
+      { value: 'multiple', label: 'A combination of the above' }
+    ]
+  },
+  {
     id: 'support',
     question: 'How would you prefer to get help?',
-    type: 'radio',
+    type: 'radio' as const,
     options: [
       { value: 'web', label: 'Through this website with text and images' },
       { value: 'sms', label: 'Text messages to my phone' },
@@ -346,7 +358,7 @@ export const assessmentQuestions = [
   {
     id: 'postcode',
     question: 'What\'s the first part of your postcode? (This helps us find local support near you)',
-    type: 'text',
+    type: 'text' as const,
     placeholder: 'e.g. B1, M1, CF1',
     note: 'We only need the first part (letters and first number) to suggest nearby help centres.'
   }

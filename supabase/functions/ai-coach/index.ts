@@ -15,6 +15,35 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Rate limiting
+  const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
+  const rateLimitKey = `ai_coach_${clientIp}`;
+  
+  // Simple in-memory rate limiting (10 requests per minute)
+  const now = Date.now();
+  const windowMs = 60000; // 1 minute
+  const maxRequests = 10;
+  
+  // In production, use Redis or similar persistent storage
+  if (!globalThis.rateLimitStore) {
+    globalThis.rateLimitStore = new Map();
+  }
+  
+  const userLimit = globalThis.rateLimitStore.get(rateLimitKey);
+  if (userLimit && userLimit.count >= maxRequests && now - userLimit.firstRequest < windowMs) {
+    return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  
+  // Update rate limit
+  if (!userLimit || now - userLimit.firstRequest > windowMs) {
+    globalThis.rateLimitStore.set(rateLimitKey, { count: 1, firstRequest: now });
+  } else {
+    userLimit.count++;
+  }
+
   try {
     const { 
       assessmentData, 
@@ -22,6 +51,44 @@ serve(async (req) => {
       requestType = 'guidance',
       currentProgress 
     } = await req.json();
+
+    // Input sanitization for AI safety
+    const sanitizeInput = (input: string): string => {
+      if (!input) return '';
+      
+      // Remove potential prompt injections
+      const dangerous = [
+        'ignore previous instructions',
+        'system prompt',
+        'reveal your instructions',
+        'disregard',
+        'override',
+        '###',
+        '<system>',
+        '</system>',
+        'assistant:',
+        'human:',
+        'ai:',
+        'chatgpt:',
+        'openai:'
+      ];
+      
+      let sanitized = input.toLowerCase();
+      for (const pattern of dangerous) {
+        if (sanitized.includes(pattern)) {
+          throw new Error('Invalid input detected');
+        }
+      }
+      
+      // Limit length and remove excessive special characters
+      return input.slice(0, 500).replace(/[<>{}]/g, '');
+    };
+
+    // Sanitize all string inputs
+    const safeUserContext = userContext ? sanitizeInput(userContext) : '';
+    const safeRequestType = ['guidance', 'encouragement', 'explanation', 'next-steps'].includes(requestType) 
+      ? requestType 
+      : 'guidance';
 
     console.log('AI Coach request:', { requestType, userContext });
 
@@ -47,7 +114,7 @@ User progress: ${JSON.stringify(currentProgress)}`;
 
     let userPrompt = '';
     
-    switch (requestType) {
+    switch (safeRequestType) {
       case 'guidance':
         userPrompt = `Based on the user's assessment results, provide personalized guidance for improving their digital skills. Focus on their weakest areas while building on their strengths. Suggest 3-5 specific, actionable next steps.`;
         break;
@@ -55,13 +122,13 @@ User progress: ${JSON.stringify(currentProgress)}`;
         userPrompt = `The user seems to be struggling or losing confidence. Provide encouraging words and remind them of their progress. Suggest easier steps they can take to build confidence.`;
         break;
       case 'explanation':
-        userPrompt = `The user needs help understanding: "${userContext}". Explain this concept in simple terms suitable for someone new to technology.`;
+        userPrompt = `The user needs help understanding: "${safeUserContext}". Explain this concept in simple terms suitable for someone new to technology.`;
         break;
       case 'next-steps':
         userPrompt = `Based on their current progress, suggest what the user should learn or practice next. Make recommendations that build logically on what they already know.`;
         break;
       default:
-        userPrompt = `Provide helpful guidance for this digital skills learner: ${userContext}`;
+        userPrompt = `Provide helpful guidance for this digital skills learner: ${safeUserContext}`;
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -71,13 +138,13 @@ User progress: ${JSON.stringify(currentProgress)}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 400,
       }),
     });
 
@@ -90,11 +157,16 @@ User progress: ${JSON.stringify(currentProgress)}`;
     const data = await response.json();
     const guidance = data.choices[0].message.content;
 
+    // Output validation - ensure response is safe
+    if (guidance.toLowerCase().includes('ignore') && guidance.toLowerCase().includes('instructions')) {
+      throw new Error('Invalid AI response detected');
+    }
+
     console.log('AI guidance generated successfully');
 
     return new Response(JSON.stringify({ 
-      guidance,
-      requestType,
+      guidance: guidance.slice(0, 1000), // Limit output length
+      requestType: safeRequestType,
       generatedAt: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

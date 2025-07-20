@@ -23,17 +23,22 @@ class GlobalErrorBoundary extends React.Component<{children: React.ReactNode}, {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial, sans-serif' }}>
-          <h1>Something went wrong</h1>
-          <details style={{ marginTop: '20px', textAlign: 'left' }}>
-            <summary>Error Details</summary>
-            <pre style={{ background: '#f5f5f5', padding: '10px', overflow: 'auto' }}>
-              {this.state.error?.toString()}
-            </pre>
-          </details>
-          <button onClick={() => window.location.reload()} style={{ marginTop: '20px', padding: '10px 20px' }}>
-            Reload Page
-          </button>
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-8">
+          <div className="max-w-md w-full space-y-4 text-center">
+            <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
+            <details className="text-left">
+              <summary className="font-medium cursor-pointer">Error Details</summary>
+              <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-auto">
+                {this.state.error?.toString()}
+              </pre>
+            </details>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="bg-primary text-primary-foreground px-6 py-2 rounded-md hover:bg-primary/90"
+            >
+              Reload Page
+            </button>
+          </div>
         </div>
       );
     }
@@ -53,10 +58,12 @@ try {
 } catch (error) {
   console.error('Failed to render app:', error);
   document.body.innerHTML = `
-    <div style="padding: 20px; text-align: center; font-family: Arial, sans-serif;">
-      <h1>App Failed to Load</h1>
-      <p>Check the console for details</p>
-      <pre style="background: #f5f5f5; padding: 10px; text-align: left;">${error}</pre>
+    <div class="min-h-screen bg-background text-foreground flex items-center justify-center p-8">
+      <div class="max-w-md w-full space-y-4 text-center">
+        <h1 class="text-2xl font-bold text-destructive">App Failed to Load</h1>
+        <p class="text-muted-foreground">Check the console for details</p>
+        <pre class="bg-muted p-4 rounded-md text-sm text-left overflow-auto">${error}</pre>
+      </div>
     </div>
   `;
 }

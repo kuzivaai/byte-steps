@@ -1,0 +1,16 @@
+{
+  "name": "Byte Steps - Digital Skills Coach",
+  "short_name": "Byte Steps",
+  "description": "Learn digital skills one manageable step at a time",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

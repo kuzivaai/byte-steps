@@ -4,8 +4,8 @@ import { LearningModule, LocalResource } from '../types';
 export const sampleLearningModules: LearningModule[] = [
   {
     id: 'basic-phone-setup',
-    title: 'Getting Started with Your Smartphone',
-    description: 'Learn the basics of using a smartphone, from turning it on to making your first call.',
+    title: 'Getting Started with Your Mobile Phone',
+    description: 'Learn the basics of using a mobile phone (a phone you can carry around), from turning it on to making your first call.',
     difficulty: 'beginner',
     category: 'basic-skills',
     estimatedTime: 15,
@@ -24,13 +24,13 @@ export const sampleLearningModules: LearningModule[] = [
       {
         id: 'step-2',
         title: 'Understanding the home screen',
-        content: 'The home screen is like the front door of your phone. You\'ll see colorful squares called "apps". Each app does something different - like making calls, sending messages, or checking the weather.',
+        content: 'The home screen is like the front door of your phone. You\'ll see colorful squares called "apps" (short for applications - these are like tools or programs). Each app does something different - like making calls, sending messages, or checking the weather.',
         type: 'instruction'
       },
       {
         id: 'step-3',
         title: 'Making your first call',
-        content: 'Find the green phone app on your home screen. Tap it once with your finger. You\'ll see a number pad, just like on an old phone. Type the number you want to call, then tap the green call button.',
+        content: 'Find the green phone app (the tool for making calls) on your home screen. Tap it once with your finger. You\'ll see a number pad, just like on an old phone. Type the number you want to call, then tap the green call button.',
         type: 'instruction'
       },
       {
@@ -63,13 +63,13 @@ export const sampleLearningModules: LearningModule[] = [
       {
         id: 'email-step-1',
         title: 'What is email?',
-        content: 'Email is like sending a letter, but it arrives instantly. Instead of putting a letter in a postbox, you type your message and send it through the internet.',
+        content: 'Email (electronic mail) is like sending a letter, but it arrives instantly. Instead of putting a letter in a postbox, you type your message and send it through the internet (the network that connects computers worldwide).',
         type: 'instruction'
       },
       {
         id: 'email-step-2',
         title: 'Opening your email app',
-        content: 'Look for an app that looks like an envelope. It might be called "Mail", "Gmail", or "Email". Tap it to open.',
+        content: 'Look for an app (program) that looks like an envelope. It might be called "Mail", "Gmail", or "Email". Tap it to open.',
         type: 'instruction'
       },
       {
@@ -298,35 +298,13 @@ export const sampleLocalResources: LocalResource[] = [
 
 export const assessmentQuestions = [
   {
-    id: 'confidence',
-    question: 'How confident do you feel using digital devices like smartphones, tablets, or computers?',
-    type: 'radio' as const,
-    options: [
-      { value: 'none', label: 'Not confident at all - I avoid using them' },
-      { value: 'basic', label: 'A little confident - I can do very basic things' },
-      { value: 'some', label: 'Somewhat confident - I can do some things but need help' },
-      { value: 'confident', label: 'Confident - I\'m comfortable with most digital tasks' }
-    ]
-  },
-  {
-    id: 'device',
-    question: 'What type of device do you have access to?',
-    type: 'radio' as const,
-    options: [
-      { value: 'smartphone', label: 'Smartphone (iPhone, Android)' },
-      { value: 'basic-phone', label: 'Basic phone (can only call and text)' },
-      { value: 'tablet', label: 'Tablet (iPad, Android tablet)' },
-      { value: 'computer', label: 'Computer or laptop' },
-      { value: 'none', label: 'I don\'t have regular access to any device' }
-    ]
-  },
-  {
     id: 'priority',
     question: 'What would you most like to learn first?',
     type: 'radio' as const,
+    note: 'This helps us recommend the best starting point for your learning journey.',
     options: [
-      { value: 'basic-phone', label: 'Basic phone skills (calls, texts, turning on/off)' },
-      { value: 'internet', label: 'Using the internet safely' },
+      { value: 'basic-phone', label: 'Basic phone skills (making calls, sending texts, turning device on/off)' },
+      { value: 'internet', label: 'Using the internet safely (browsing websites, avoiding scams)' },
       { value: 'communication', label: 'Email and staying in touch with family' },
       { value: 'services', label: 'Accessing online services (NHS, banking, shopping)' },
       { value: 'safety', label: 'Staying safe online and avoiding scams' }
@@ -336,30 +314,20 @@ export const assessmentQuestions = [
     id: 'accessibility',
     question: 'Do you need any accessibility features to help you learn?',
     type: 'radio' as const,
+    note: 'We can adjust text size and colours to make learning easier for you.',
     options: [
       { value: 'none', label: 'No specific needs' },
       { value: 'large-text', label: 'Larger text size' },
-      { value: 'high-contrast', label: 'High contrast colours' },
+      { value: 'high-contrast', label: 'High contrast colours (better visibility)' },
       { value: 'audio', label: 'Audio descriptions and voice guidance' },
       { value: 'multiple', label: 'A combination of the above' }
     ]
   },
   {
-    id: 'support',
-    question: 'How would you prefer to get help?',
-    type: 'radio' as const,
-    options: [
-      { value: 'web', label: 'Through this website with text and images' },
-      { value: 'sms', label: 'Text messages to my phone' },
-      { value: 'voice', label: 'Phone calls with spoken instructions' },
-      { value: 'local', label: 'Face-to-face help at a local centre' }
-    ]
-  },
-  {
     id: 'postcode',
-    question: 'What\'s the first part of your postcode? (This helps us find local support near you)',
+    question: 'What is the first part of your postcode?',
     type: 'text' as const,
     placeholder: 'e.g. B1, M1, CF1',
-    note: 'We only need the first part (letters and first number) to suggest nearby help centres.'
+    note: 'This helps us find local support centres near you. We only need the first part (letters and first number) - for example "B1" from "B1 2AA".'
   }
 ];

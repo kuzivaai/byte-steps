@@ -15,8 +15,26 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
+  const validatePostcode = (postcode: string): boolean => {
+    // UK postcode first part validation: 1-2 letters followed by 1-2 numbers
+    const regex = /^[A-Za-z]{1,2}[0-9]{1,2}$/;
+    return regex.test(postcode.trim());
+  };
+
+  const sanitizeInput = (input: string): string => {
+    // Remove any HTML tags and limit length
+    return input.replace(/<[^>]*>/g, '').trim().slice(0, 10);
+  };
+
   const handleAnswer = (questionId: string, value: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
+    let processedValue = value;
+    
+    // Validate and sanitize postcode input
+    if (questionId === 'postcode') {
+      processedValue = sanitizeInput(value).toUpperCase();
+    }
+    
+    setAnswers(prev => ({ ...prev, [questionId]: processedValue }));
   };
 
   const handleNext = () => {
@@ -36,8 +54,16 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
 
   const currentQ = assessmentQuestions[currentQuestion];
   const currentAnswer = answers[currentQ.id] || '';
-  const isAnswered = currentAnswer.length > 0;
-  const progress = ((currentQuestion + (isAnswered ? 1 : 0)) / assessmentQuestions.length) * 100;
+  
+  const isAnswered = () => {
+    if (currentQ.type === 'text' && currentQ.id === 'postcode') {
+      return currentAnswer.length > 0 && validatePostcode(currentAnswer);
+    }
+    return currentAnswer.length > 0;
+  };
+  
+  const answeredStatus = isAnswered();
+  const progress = ((currentQuestion + (answeredStatus ? 1 : 0)) / assessmentQuestions.length) * 100;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -126,12 +152,22 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
                   placeholder={currentQ.placeholder}
                   value={currentAnswer}
                   onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
-                  className="text-lg py-4 focus:ring-4 focus:ring-primary/20 focus:outline-none"
+                  className={`text-lg py-4 focus:ring-4 focus:ring-primary/20 focus:outline-none ${
+                    currentQ.id === 'postcode' && currentAnswer && !validatePostcode(currentAnswer) 
+                      ? 'border-destructive focus:ring-destructive/20' 
+                      : ''
+                  }`}
                   aria-describedby={currentQ.note ? `note-${currentQuestion}` : undefined}
+                  aria-invalid={currentQ.id === 'postcode' && currentAnswer && !validatePostcode(currentAnswer)}
                 />
                 {currentQ.note && (
                   <p id={`note-${currentQuestion}`} className="text-base text-muted-foreground">
                     {currentQ.note}
+                  </p>
+                )}
+                {currentQ.id === 'postcode' && currentAnswer && !validatePostcode(currentAnswer) && (
+                  <p className="text-sm text-destructive mt-1" role="alert">
+                    Please enter a valid UK postcode area (e.g. B1, M2, CF3)
                   </p>
                 )}
               </div>
@@ -152,7 +188,7 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
 
               <Button
                 onClick={handleNext}
-                disabled={!isAnswered}
+                disabled={!answeredStatus}
                 size="lg"
                 className="text-lg px-6 py-3 focus:ring-4 focus:ring-primary/20 focus:outline-none"
                 aria-label={

@@ -7,17 +7,17 @@ import InitialAssessment from './InitialAssessment';
 import LearningModuleView from './LearningModuleView';
 import LocalResourceFinder from './LocalResourceFinder';
 import PrivacyNotice from './PrivacyNotice';
+import AboutUs from './AboutUs';
+import HumanHelpRequest from './HumanHelpRequest';
 import { LearningModule } from '../types';
 import { sampleLearningModules } from '../data/sampleData';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-type View = 'home' | 'assessment' | 'learning' | 'resources' | 'progress';
+type View = 'home' | 'assessment' | 'learning' | 'resources' | 'progress' | 'about' | 'help';
 
 interface UserProfile {
-  confidence: string;
-  device: string;
   priority: string;
-  support: string;
+  accessibility: string;
   postcode: string;
 }
 
@@ -94,6 +94,19 @@ const DigitalSkillsCoach: React.FC = () => {
   if (currentView === 'resources') {
     return (
       <LocalResourceFinder
+        userPostcode={userProfile?.postcode}
+        onBack={() => setCurrentView('learning')}
+      />
+    );
+  }
+
+  if (currentView === 'about') {
+    return <AboutUs onBack={() => setCurrentView('home')} />;
+  }
+
+  if (currentView === 'help') {
+    return (
+      <HumanHelpRequest
         userPostcode={userProfile?.postcode}
         onBack={() => setCurrentView('learning')}
       />
@@ -244,10 +257,7 @@ const DigitalSkillsCoach: React.FC = () => {
                 
                 <Button 
                   variant="secondary"
-                  onClick={() => {
-                    // In a real implementation, this would trigger an alert to a volunteer
-                    alert('A friendly volunteer will contact you within 24 hours to help with your question. You can also visit your local library or community centre for immediate help.');
-                  }}
+                  onClick={() => setCurrentView('help')}
                   className="focus:ring-4 focus:ring-secondary/20 focus:outline-none"
                   aria-describedby="human-help-desc"
                 >
@@ -256,6 +266,13 @@ const DigitalSkillsCoach: React.FC = () => {
                 </Button>
                 <span id="human-help-desc" className="sr-only">Connect with a real person for personalized assistance</span>
                 
+                <Button 
+                  variant="outline"
+                  onClick={() => setCurrentView('about')}
+                  className="focus:ring-4 focus:ring-primary/20 focus:outline-none"
+                >
+                  About Us
+                </Button>
                 <Button 
                   variant="outline"
                   onClick={() => setCurrentView('home')}
@@ -272,14 +289,18 @@ const DigitalSkillsCoach: React.FC = () => {
                   <h3 className="font-semibold mb-2">Recommended for you:</h3>
                   <div className="flex gap-2 flex-wrap">
                     <Badge variant="secondary">
-                      {userProfile.device.replace('-', ' ')} user
-                    </Badge>
-                    <Badge variant="secondary">
                       Wants to learn: {userProfile.priority.replace('-', ' ')}
                     </Badge>
-                    <Badge variant="secondary">
-                      Prefers: {userProfile.support} help
-                    </Badge>
+                    {userProfile.accessibility !== 'none' && (
+                      <Badge variant="secondary">
+                        Accessibility: {userProfile.accessibility.replace('-', ' ')}
+                      </Badge>
+                    )}
+                    {userProfile.postcode && (
+                      <Badge variant="secondary">
+                        Area: {userProfile.postcode}
+                      </Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>

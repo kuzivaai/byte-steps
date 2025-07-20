@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Heart, Shield, Users, Phone, MessageSquare, Computer, ArrowRight, CheckCircle, Clock, MapPin, HelpCircle, Settings } from 'lucide-react';
+import { Alert, AlertDescription } from './ui/alert';
+import { Heart, Shield, Users, Phone, MessageSquare, Computer, ArrowRight, CheckCircle, Clock, MapPin, HelpCircle, Settings, RotateCcw } from 'lucide-react';
 
 // Keep most components synchronous - only lazy load truly heavy ones
 import InitialAssessment from './InitialAssessment';
@@ -13,10 +14,13 @@ import AboutUs from './AboutUs';
 import HumanHelpRequest from './HumanHelpRequest';
 import AccessibilityControls from './AccessibilityControls';
 import DataManagement from './DataManagement';
+import { OfflineIndicator } from './OfflineIndicator';
 
 import { LearningModule } from '../types';
 import { sampleLearningModules } from '../data/sampleData';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { usePersistentStorage } from '../hooks/usePersistentStorage';
+import { useSessionRecovery } from '../hooks/useSessionRecovery';
+import { analytics } from '../utils/analytics';
 
 type View = 'home' | 'assessment' | 'learning' | 'resources' | 'progress' | 'about' | 'help' | 'data';
 
@@ -28,10 +32,14 @@ interface UserProfile {
 
 const DigitalSkillsCoach: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('home');
-  const [userProfile, setUserProfile] = useLocalStorage<UserProfile | null>('bytesteps-user-profile', null);
+  const [userProfile, setUserProfile] = usePersistentStorage<UserProfile | null>('bytesteps-user-profile', null);
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
-  const [completedModules, setCompletedModules] = useLocalStorage<string[]>('bytesteps-completed-modules', []);
+  const [completedModules, setCompletedModules] = usePersistentStorage<string[]>('bytesteps-completed-modules', []);
   const [showAccessibilityControls, setShowAccessibilityControls] = useState(false);
+  const [showSessionRecovery, setShowSessionRecovery] = useState(false);
+
+  // Session recovery
+  const { sessionData, saveSession, clearSession, checkForSession } = useSessionRecovery();
 
   // Initialize privacy consent from localStorage
   const [hasPrivacyConsent, setHasPrivacyConsent] = useState<boolean | null>(() => {
@@ -44,28 +52,78 @@ const DigitalSkillsCoach: React.FC = () => {
     }
   });
 
+  // Check for session recovery on mount
+  useEffect(() => {
+    const existingSession = checkForSession();
+    if (existingSession && hasPrivacyConsent === true) {
+      setShowSessionRecovery(true);
+    }
+    
+    // Track page view
+    analytics.pageView('digital_skills_coach');
+  }, [checkForSession, hasPrivacyConsent]);
+
+  // Auto-save session data
+  useEffect(() => {
+    if (hasPrivacyConsent === true && currentView !== 'home') {
+      saveSession({
+        currentStep: currentView,
+        assessmentProgress: userProfile,
+        moduleProgress: completedModules
+      });
+    }
+  }, [currentView, userProfile, completedModules, hasPrivacyConsent, saveSession]);
+
   const handleAssessmentComplete = (profile: UserProfile) => {
     setUserProfile(profile);
     setCurrentView('learning');
+    analytics.assessmentCompleted(Date.now() - (sessionData?.lastSaved ? new Date(sessionData.lastSaved).getTime() : Date.now()));
   };
 
   const handleStartModule = (module: LearningModule) => {
     setSelectedModule(module);
+    analytics.moduleStarted(module.id);
   };
 
   const handleModuleComplete = (moduleId: string) => {
     setCompletedModules(prev => [...prev, moduleId]);
     setSelectedModule(null);
+    analytics.moduleCompleted(moduleId);
   };
 
   const handlePrivacyConsent = (consent: boolean) => {
     setHasPrivacyConsent(consent);
     try {
       localStorage.setItem('bytesteps-privacy-consent', consent.toString());
+      if (consent) {
+        analytics.featureUsed('privacy_consent_granted');
+      }
     } catch (error) {
       console.error('Error saving privacy consent to localStorage:', error);
     }
   };
+
+  // Handle session recovery
+  const handleRecoverSession = useCallback(() => {
+    if (sessionData) {
+      setCurrentView(sessionData.currentStep as View);
+      if (sessionData.assessmentProgress) {
+        setUserProfile(sessionData.assessmentProgress);
+      }
+      if (sessionData.moduleProgress) {
+        setCompletedModules(sessionData.moduleProgress);
+      }
+      analytics.featureUsed('session_recovered');
+    }
+    setShowSessionRecovery(false);
+  }, [sessionData, setUserProfile, setCompletedModules]);
+
+  const handleStartFresh = useCallback(() => {
+    clearSession();
+    setCurrentView('home');
+    setShowSessionRecovery(false);
+    analytics.featureUsed('session_start_fresh');
+  }, [clearSession]);
 
   // Show privacy notice if consent hasn't been determined
   if (hasPrivacyConsent === null) {
@@ -127,6 +185,26 @@ const DigitalSkillsCoach: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <OfflineIndicator />
+      
+      {/* Session Recovery Alert */}
+      {showSessionRecovery && (
+        <Alert className="fixed top-4 left-4 right-4 z-50 max-w-2xl mx-auto bg-card border-primary">
+          <RotateCcw className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>We found a previous session. Would you like to continue where you left off?</span>
+            <div className="flex gap-2 ml-4">
+              <Button variant="outline" size="sm" onClick={handleStartFresh}>
+                Start Fresh
+              </Button>
+              <Button size="sm" onClick={handleRecoverSession}>
+                Continue
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Skip to main content link for screen readers */}
       <a 
         href="#main-content" 

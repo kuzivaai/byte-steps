@@ -14,7 +14,176 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessment_responses: {
+        Row: {
+          created_at: string | null
+          id: string
+          question_id: string
+          response: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question_id: string
+          response: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question_id?: string
+          response?: Json
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_requests: {
+        Row: {
+          contact_details: string | null
+          contact_method: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          status: string | null
+          urgency: string | null
+          user_id: string | null
+        }
+        Insert: {
+          contact_details?: string | null
+          contact_method?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          status?: string | null
+          urgency?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          contact_details?: string | null
+          contact_method?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          status?: string | null
+          urgency?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_progress: {
+        Row: {
+          completed_at: string | null
+          id: string
+          module_id: string
+          score: number | null
+          started_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          module_id: string
+          score?: number | null
+          started_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          module_id?: string
+          score?: number | null
+          started_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          consent_given: boolean | null
+          consent_timestamp: string | null
+          created_at: string | null
+          id: string
+          last_active: string | null
+          postcode_prefix: string | null
+        }
+        Insert: {
+          consent_given?: boolean | null
+          consent_timestamp?: string | null
+          created_at?: string | null
+          id?: string
+          last_active?: string | null
+          postcode_prefix?: string | null
+        }
+        Update: {
+          consent_given?: boolean | null
+          consent_timestamp?: string | null
+          created_at?: string | null
+          id?: string
+          last_active?: string | null
+          postcode_prefix?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

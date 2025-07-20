@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { checkAnonymousRateLimit, getRateLimitResponse, logAnonymousUser } from '../_shared/rateLimiting.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,16 +60,45 @@ serve(async (req) => {
 
   const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
   
-  // Check rate limit using database
-  const rateLimitOk = await checkRateLimit(clientIp, 'ai-coach');
-  if (!rateLimitOk) {
-    return new Response(
-      JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-      { 
-        status: 429, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+  // Get authorization header for auth check
+  const authHeader = req.headers.get('Authorization');
+  
+  // Initialize Supabase client for user auth check
+  const userSupabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    authHeader ? {
+      global: { headers: { Authorization: authHeader } }
+    } : {}
+  );
+  
+  // Check if user is authenticated
+  const { data: { user }, error: userError } = await userSupabase.auth.getUser();
+  
+  if (!user) {
+    // Anonymous user - check new rate limiting system
+    console.log('Anonymous user detected, checking rate limit');
+    const canProceed = await checkAnonymousRateLimit(supabase, req);
+    if (!canProceed) {
+      console.log('Rate limit exceeded for anonymous user');
+      return getRateLimitResponse();
+    }
+    
+    // Log anonymous user activity
+    await logAnonymousUser(supabase, req);
+    console.log('Anonymous user allowed to proceed');
+  } else {
+    // Authenticated user - use existing rate limiting
+    const rateLimitOk = await checkRateLimit(clientIp, 'ai-coach');
+    if (!rateLimitOk) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { 
+          status: 429, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
   }
 
   try {

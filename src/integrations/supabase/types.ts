@@ -184,41 +184,97 @@ export type Database = {
         }
         Relationships: []
       }
+      security_documentation: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          decision: string
+          feature: string
+          id: string
+          mitigations: string[] | null
+          reasoning: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          decision: string
+          feature: string
+          id?: string
+          mitigations?: string[] | null
+          reasoning: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          decision?: string
+          feature?: string
+          id?: string
+          mitigations?: string[] | null
+          reasoning?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
+          anonymous_session_id: string | null
           consent_given: boolean | null
           consent_timestamp: string | null
           created_at: string | null
           id: string
           ip_address: unknown | null
+          is_anonymous: boolean | null
           last_active: string | null
+          last_active_ip: unknown | null
           postcode_prefix: string | null
         }
         Insert: {
+          anonymous_session_id?: string | null
           consent_given?: boolean | null
           consent_timestamp?: string | null
           created_at?: string | null
           id?: string
           ip_address?: unknown | null
+          is_anonymous?: boolean | null
           last_active?: string | null
+          last_active_ip?: unknown | null
           postcode_prefix?: string | null
         }
         Update: {
+          anonymous_session_id?: string | null
           consent_given?: boolean | null
           consent_timestamp?: string | null
           created_at?: string | null
           id?: string
           ip_address?: unknown | null
+          is_anonymous?: boolean | null
           last_active?: string | null
+          last_active_ip?: unknown | null
           postcode_prefix?: string | null
         }
         Relationships: []
       }
     }
     Views: {
-      [_ in never]: never
+      anonymous_usage_stats: {
+        Row: {
+          activity_date: string | null
+          total_anonymous_users: number | null
+          unique_ip_addresses: number | null
+          unique_sessions: number | null
+          users_last_hour: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      check_anonymous_rate_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      cleanup_old_anonymous_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_rate_limits: {
         Args: Record<PropertyKey, never>
         Returns: undefined

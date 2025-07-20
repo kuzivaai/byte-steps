@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
   requiresConsent: boolean = true
 ): [T, (value: T | ((prev: T) => T)) => void, () => void] {
+  // Use ref to prevent infinite loops
+  const isInitialized = useRef(false);
+  
   // Get from local storage then parse stored json or return initialValue
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
@@ -17,15 +20,18 @@ export function useLocalStorage<T>(
       }
 
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      const result = item ? JSON.parse(item) : initialValue;
+      isInitialized.current = true;
+      return result;
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}":`, error);
+      isInitialized.current = true;
       return initialValue;
     }
   });
 
-  // Return a wrapped version of useState's setter function that persists the new value to localStorage
-  const setValue = (value: T | ((prev: T) => T)) => {
+  // Memoized setValue to prevent recreating on every render
+  const setValue = useCallback((value: T | ((prev: T) => T)) => {
     try {
       // Allow value to be a function so we have the same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
@@ -46,24 +52,27 @@ export function useLocalStorage<T>(
     } catch (error) {
       console.warn(`Error setting localStorage key "${key}":`, error);
     }
-  };
+  }, [key, storedValue, requiresConsent]);
 
-  // Clear the stored value
-  const clearValue = () => {
+  // Memoized clearValue
+  const clearValue = useCallback(() => {
     try {
       window.localStorage.removeItem(key);
       setStoredValue(initialValue);
     } catch (error) {
       console.warn(`Error clearing localStorage key "${key}":`, error);
     }
-  };
+  }, [key, initialValue]);
 
   // Listen for changes to this key from other tabs/windows
   useEffect(() => {
+    if (!isInitialized.current) return;
+    
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === key && e.newValue !== null) {
         try {
-          setStoredValue(JSON.parse(e.newValue));
+          const newValue = JSON.parse(e.newValue);
+          setStoredValue(newValue);
         } catch (error) {
           console.warn(`Error parsing localStorage value for key "${key}":`, error);
         }

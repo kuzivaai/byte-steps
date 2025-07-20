@@ -1,29 +1,83 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import DigitalSkillsCoach from '../components/DigitalSkillsCoach';
 
 const Index = () => {
-  return (
-    <div className="min-h-screen bg-primary text-primary-foreground flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <h1 className="text-6xl font-bold">✅ PREVIEW WORKS!</h1>
-        <p className="text-2xl">ByteSteps is loading correctly</p>
-        <div className="bg-white text-black p-6 rounded-lg max-w-md">
-          <p className="text-lg font-semibold">If you can see this:</p>
-          <ul className="text-left mt-2 space-y-1">
-            <li>✅ React is rendering</li>
-            <li>✅ Tailwind CSS is working</li>
-            <li>✅ Build process succeeded</li>
-            <li>✅ Preview infrastructure is functional</li>
-          </ul>
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Small delay to let everything initialize
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 100);
+
+    // Global error handler
+    const handleError = (event: ErrorEvent) => {
+      console.error('Runtime error caught:', event.error);
+      setError(`Runtime Error: ${event.error?.message || 'Unknown error'}`);
+    };
+
+    window.addEventListener('error', handleError);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('error', handleError);
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-8">
+        <div className="max-w-2xl text-center space-y-4">
+          <h1 className="text-3xl font-bold text-destructive">Runtime Error Detected</h1>
+          <div className="bg-muted p-4 rounded-lg text-left">
+            <pre className="text-sm overflow-auto">{error}</pre>
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-primary text-primary-foreground px-6 py-2 rounded-lg"
+          >
+            Reload App
+          </button>
+          <p className="text-sm text-muted-foreground">
+            Check the browser console for more details
+          </p>
         </div>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="bg-white text-primary px-6 py-2 rounded-lg font-semibold hover:bg-gray-100"
-        >
-          Reload Test
-        </button>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-primary text-primary-foreground flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Loading ByteSteps...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  try {
+    return <DigitalSkillsCoach />;
+  } catch (renderError) {
+    console.error('Render error:', renderError);
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-8">
+        <div className="max-w-2xl text-center space-y-4">
+          <h1 className="text-3xl font-bold text-destructive">Render Error</h1>
+          <div className="bg-muted p-4 rounded-lg text-left">
+            <pre className="text-sm overflow-auto">{String(renderError)}</pre>
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-primary text-primary-foreground px-6 py-2 rounded-lg"
+          >
+            Reload App
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default Index;

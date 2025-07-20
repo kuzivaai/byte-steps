@@ -10,11 +10,12 @@ import PrivacyNotice from './PrivacyNotice';
 import AboutUs from './AboutUs';
 import HumanHelpRequest from './HumanHelpRequest';
 import AccessibilityControls from './AccessibilityControls';
+import DataManagement from './DataManagement';
 import { LearningModule } from '../types';
 import { sampleLearningModules } from '../data/sampleData';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-type View = 'home' | 'assessment' | 'learning' | 'resources' | 'progress' | 'about' | 'help';
+type View = 'home' | 'assessment' | 'learning' | 'resources' | 'progress' | 'about' | 'help' | 'data';
 
 interface UserProfile {
   priority: string;
@@ -106,13 +107,8 @@ const DigitalSkillsCoach: React.FC = () => {
     return <AboutUs onBack={() => setCurrentView('home')} />;
   }
 
-  if (currentView === 'help') {
-    return (
-      <HumanHelpRequest
-        userPostcode={userProfile?.postcode}
-        onBack={() => setCurrentView('learning')}
-      />
-    );
+  if (currentView === 'data') {
+    return <DataManagement onBack={() => setCurrentView('home')} />;
   }
 
   return (

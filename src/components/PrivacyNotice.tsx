@@ -3,12 +3,14 @@ import { Shield, X, Check, Info } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Checkbox } from './ui/checkbox';
+import { useAuditLogger } from '../hooks/useAuditLogger';
 
 interface PrivacyNoticeProps {
   onAccept: (consent: boolean) => void;
 }
 
 const PrivacyNotice: React.FC<PrivacyNoticeProps> = ({ onAccept }) => {
+  const auditLogger = useAuditLogger();
   const [showNotice, setShowNotice] = useState(false);
   const [consent, setConsent] = useState(false);
 
@@ -23,13 +25,19 @@ const PrivacyNotice: React.FC<PrivacyNoticeProps> = ({ onAccept }) => {
   }, [onAccept]);
 
   const handleAccept = () => {
+    const timestamp = new Date().toISOString();
     localStorage.setItem('bytesteps-privacy-consent', 'true');
+    localStorage.setItem('bytesteps-consent-timestamp', timestamp);
+    auditLogger.logConsentEvent(true);
     onAccept(true);
     setShowNotice(false);
   };
 
   const handleDecline = () => {
+    const timestamp = new Date().toISOString();
     localStorage.setItem('bytesteps-privacy-consent', 'false');
+    localStorage.setItem('bytesteps-consent-timestamp', timestamp);
+    auditLogger.logConsentEvent(false);
     onAccept(false);
     setShowNotice(false);
   };

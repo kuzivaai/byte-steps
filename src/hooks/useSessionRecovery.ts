@@ -49,8 +49,12 @@ export const useSessionRecovery = () => {
     return sessionData;
   }, [sessionData, clearSession]);
 
-  // Set up auto-save interval
+  // Set up auto-save interval and visibility change detection
   useEffect(() => {
+    let lastActiveTime = Date.now();
+    let syncTimeout: NodeJS.Timeout;
+
+    // Auto-save interval
     const interval = setInterval(() => {
       // Only auto-save if there's existing session data
       if (sessionData && sessionData.currentStep !== 'start') {
@@ -58,7 +62,72 @@ export const useSessionRecovery = () => {
       }
     }, 30000); // 30 seconds
 
-    return () => clearInterval(interval);
+    // Handle device sleep/wake and tab switching
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page is hidden (user switched tabs or device went to sleep)
+        lastActiveTime = Date.now();
+        console.log('Page hidden, marking last active time');
+      } else {
+        // Page is visible again
+        const inactiveTime = Date.now() - lastActiveTime;
+        
+        console.log(`Page visible again after ${Math.round(inactiveTime / 1000)}s`);
+        
+        // If inactive for more than 5 minutes, sync immediately
+        if (inactiveTime > 5 * 60 * 1000) {
+          console.log('Device wake detected, syncing data...');
+          
+          if (sessionData) {
+            saveSession(sessionData);
+          }
+          
+          // Show sync notification using analytics (since we don't have direct toast access here)
+          analytics.featureUsed('device_wake_sync');
+        }
+      }
+    };
+
+    // Additional sync on window focus (covers more cases than visibility)
+    const handleFocus = () => {
+      console.log('Window focused, scheduling sync');
+      clearTimeout(syncTimeout);
+      syncTimeout = setTimeout(() => {
+        if (sessionData) {
+          saveSession(sessionData);
+          analytics.featureUsed('window_focus_sync');
+        }
+      }, 1000);
+    };
+
+    // Handle page unload - save current state
+    const handleBeforeUnload = () => {
+      if (sessionData) {
+        // Synchronous save for beforeunload
+        try {
+          const updatedSession = {
+            ...sessionData,
+            lastSaved: new Date().toISOString()
+          };
+          localStorage.setItem('bytesteps-session-recovery', JSON.stringify(updatedSession));
+        } catch (e) {
+          console.warn('Failed to save session on unload:', e);
+        }
+      }
+    };
+
+    // Add event listeners
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(syncTimeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [sessionData, saveSession]);
 
   return {

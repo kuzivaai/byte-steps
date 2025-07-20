@@ -15,12 +15,14 @@ import HumanHelpRequest from './HumanHelpRequest';
 import AccessibilityControls from './AccessibilityControls';
 import DataManagement from './DataManagement';
 import { OfflineIndicator } from './OfflineIndicator';
+import { StorageWarning } from './StorageWarning';
 
 import { LearningModule } from '../types';
 import { sampleLearningModules } from '../data/sampleData';
 import { usePersistentStorage } from '../hooks/usePersistentStorage';
 import { useSessionRecovery } from '../hooks/useSessionRecovery';
 import { analytics } from '../utils/analytics';
+import { perfMonitor } from '../utils/performanceMonitor';
 
 type View = 'home' | 'assessment' | 'learning' | 'resources' | 'progress' | 'about' | 'help' | 'data';
 
@@ -61,7 +63,62 @@ const DigitalSkillsCoach: React.FC = () => {
     
     // Track page view
     analytics.pageView('digital_skills_coach');
+    
+    // Start performance monitoring
+    perfMonitor.startMonitoring();
+    
+    return () => {
+      // Clean up performance monitoring on unmount
+      perfMonitor.stopMonitoring();
+    };
   }, [checkForSession, hasPrivacyConsent]);
+
+  // Browser navigation protection
+  useEffect(() => {
+    const hasUnsavedProgress = () => {
+      return currentView === 'assessment' && userProfile && Object.keys(userProfile).length > 0;
+    };
+
+    // Warn users before leaving with unsaved progress
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedProgress()) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved progress. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    // Handle browser back button
+    const handlePopState = (e: PopStateEvent) => {
+      if (hasUnsavedProgress()) {
+        const shouldSave = confirm('You have unsaved progress. Do you want to save before going back?');
+        if (!shouldSave) {
+          // Push state back to prevent navigation
+          window.history.pushState(null, '', window.location.pathname);
+          e.preventDefault();
+        } else {
+          // Save progress before allowing navigation
+          saveSession({
+            currentStep: currentView,
+            assessmentProgress: userProfile,
+            moduleProgress: completedModules
+          });
+          analytics.featureUsed('back_button_save');
+        }
+      }
+    };
+
+    // Push initial state to enable back button handling
+    window.history.pushState(null, '', window.location.pathname);
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [currentView, userProfile, completedModules, saveSession]);
 
   // Auto-save session data
   useEffect(() => {
@@ -186,6 +243,7 @@ const DigitalSkillsCoach: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <OfflineIndicator />
+      <StorageWarning />
       
       {/* Session Recovery Alert */}
       {showSessionRecovery && (

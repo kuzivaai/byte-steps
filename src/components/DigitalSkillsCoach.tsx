@@ -90,10 +90,10 @@ const DigitalSkillsCoach: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-3 mb-2">
             <Heart className="h-8 w-8" />
-            <h1 className="text-3xl font-bold">Digital Skills Coach</h1>
+            <h1 className="text-3xl font-bold">Byte Steps</h1>
           </div>
           <p className="text-lg opacity-90">
-            Friendly, step-by-step help with digital skills for everyone
+            Every digital journey begins with a single byte. We'll guide you one step at a time.
           </p>
         </div>
       </header>
@@ -106,8 +106,7 @@ const DigitalSkillsCoach: React.FC = () => {
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl mb-2">Welcome! 👋</CardTitle>
                 <CardDescription className="text-lg">
-                  We're here to help you feel confident using digital technology. 
-                  No matter your experience level, we'll guide you step by step.
+                  Technology doesn't have to be overwhelming. At Byte Steps, we break everything down into small, manageable pieces—just like how computers work with tiny bytes of information. Each lesson is a simple step forward on your digital journey.
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center">

@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import { Heart, Shield, Users, Phone, MessageSquare, Computer, ArrowRight, CheckCircle, Clock, MapPin, HelpCircle, Settings, RotateCcw } from 'lucide-react';
+import { ElderlyHelpMenu } from '@/components/ElderlyHelpMenu';
 
 // Keep most components synchronous - only lazy load truly heavy ones
 import InitialAssessment from './InitialAssessment';
@@ -575,6 +576,9 @@ const DigitalSkillsCoach: React.FC = () => {
           </div>
         )}
       </main>
+      
+      {/* Elderly Help Menu - always available */}
+      <ElderlyHelpMenu />
     </div>
   );
 };

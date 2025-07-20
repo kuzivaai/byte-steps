@@ -1,3 +1,6 @@
+/* Add elderly optimizations first */
+@import './styles/elderly-optimized.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

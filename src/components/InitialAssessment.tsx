@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,6 +6,9 @@ import { Label } from './ui/label';
 import { Progress } from './ui/progress';
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import { assessmentQuestions } from '../data/sampleData';
+import { ProgressIndicator } from '@/components/ProgressIndicator';
+import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
+import { simplifiedCopy } from '@/content/simplifiedCopy';
 
 interface InitialAssessmentProps {
   onComplete: (profile: any) => void;
@@ -14,6 +17,8 @@ interface InitialAssessmentProps {
 const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const validatePostcode = (postcode: string): boolean => {
     // UK postcode first part validation: 1-2 letters followed by 1-2 numbers
@@ -36,6 +41,20 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
     
     setAnswers(prev => ({ ...prev, [questionId]: processedValue }));
   };
+
+  // Auto-save logic
+  useEffect(() => {
+    const saveTimer = setTimeout(() => {
+      setSaving(true);
+      // Simulate save operation
+      setTimeout(() => {
+        setSaving(false);
+        setLastSaved(new Date());
+      }, 1000);
+    }, 2000);
+
+    return () => clearTimeout(saveTimer);
+  }, [answers]);
 
   const handleNext = () => {
     if (currentQuestion < assessmentQuestions.length - 1) {
@@ -78,21 +97,11 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
 
       <div className="w-full max-w-2xl" role="main">
         {/* Progress */}
-        <div className="mb-8" aria-label="Assessment progress">
-          <div className="flex justify-between items-center mb-2">
-            <p className="text-base text-muted-foreground" aria-live="polite">
-              Question {currentQuestion + 1} of {assessmentQuestions.length}
-            </p>
-            <p className="text-base text-muted-foreground" aria-live="polite">
-              {Math.round(progress)}% complete
-            </p>
-          </div>
-          <Progress 
-            value={progress} 
-            className="w-full" 
-            aria-label={`Assessment progress: ${Math.round(progress)}% complete`}
-          />
-        </div>
+        <ProgressIndicator 
+          current={currentQuestion + 1} 
+          total={assessmentQuestions.length} 
+          label={simplifiedCopy.assessment.title}
+        />
 
         {/* Question Card */}
         <Card id="assessment-content" className="border-2 focus-within:ring-2 focus-within:ring-primary/20">
@@ -120,7 +129,7 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
                 {currentQ.options.map((option, index) => (
                   <label
                     key={option.value}
-                    className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors focus-within:ring-2 focus-within:ring-primary/20"
+                    className="block p-6 border-2 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors focus-within:ring-4 focus-within:ring-primary/20"
                   >
                     <input
                       type="radio"
@@ -128,11 +137,11 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
                       value={option.value}
                       checked={currentAnswer === option.value}
                       onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
-                      className="mt-1 h-5 w-5 text-primary focus:ring-2 focus:ring-primary/20"
+                      className="mr-4 w-6 h-6 text-primary focus:ring-4 focus:ring-primary/20"
                       aria-describedby={`option-${currentQuestion}-${index}`}
                     />
                     <span 
-                      className="text-lg leading-relaxed"
+                      className="text-xl leading-relaxed"
                       id={`option-${currentQuestion}-${index}`}
                     >
                       {option.label}
@@ -179,18 +188,17 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={currentQuestion === 0}
-                className="text-lg px-6 py-3 focus:ring-4 focus:ring-primary/20 focus:outline-none"
+                className="text-xl px-8 py-4 min-h-[48px] min-w-[120px] focus:ring-4 focus:ring-primary/20 focus:outline-none"
                 aria-label={currentQuestion === 0 ? "Previous question (not available)" : "Go to previous question"}
               >
-                <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
-                Previous
+                <ArrowLeft className="h-5 w-5 mr-2" aria-hidden="true" />
+                {simplifiedCopy.assessment.backButton}
               </Button>
 
               <Button
                 onClick={handleNext}
                 disabled={!answeredStatus}
-                size="lg"
-                className="text-lg px-6 py-3 focus:ring-4 focus:ring-primary/20 focus:outline-none"
+                className="text-xl px-8 py-4 min-h-[48px] min-w-[120px] focus:ring-4 focus:ring-primary/20 focus:outline-none"
                 aria-label={
                   currentQuestion === assessmentQuestions.length - 1 
                     ? "Complete assessment" 
@@ -199,11 +207,11 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
               >
                 {currentQuestion === assessmentQuestions.length - 1 ? (
                   <>
-                    Complete <CheckCircle className="ml-2 h-4 w-4" aria-hidden="true" />
+                    {simplifiedCopy.assessment.finishButton} <CheckCircle className="ml-2 h-5 w-5" aria-hidden="true" />
                   </>
                 ) : (
                   <>
-                    Next <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                    {simplifiedCopy.assessment.nextButton} <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
                   </>
                 )}
               </Button>
@@ -213,11 +221,18 @@ const InitialAssessment: React.FC<InitialAssessmentProps> = ({ onComplete }) => 
 
         {/* Help Text */}
         <div className="mt-6 text-center">
-          <p className="text-base text-muted-foreground leading-relaxed">
-            These questions help us recommend the best learning path for you. 
-            You can change your preferences anytime.
+          <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            {simplifiedCopy.assessment.subtitle}
           </p>
+          <ul className="mt-4 text-base text-muted-foreground space-y-1">
+            {simplifiedCopy.assessment.instructions.map((instruction, index) => (
+              <li key={index}>• {instruction}</li>
+            ))}
+          </ul>
         </div>
+
+        {/* Auto-save indicator */}
+        <AutoSaveIndicator lastSaved={lastSaved} saving={saving} />
       </div>
     </div>
   );

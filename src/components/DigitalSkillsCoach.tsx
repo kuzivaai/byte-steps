@@ -16,6 +16,7 @@ import AccessibilityControls from './AccessibilityControls';
 import DataManagement from './DataManagement';
 import { OfflineIndicator } from './OfflineIndicator';
 import { StorageWarning } from './StorageWarning';
+import { AICoach } from './AICoach';
 
 import { LearningModule } from '../types';
 import { sampleLearningModules } from '../data/sampleData';
@@ -24,7 +25,7 @@ import { useSessionRecovery } from '../hooks/useSessionRecovery';
 import { analytics } from '../utils/analytics';
 import { perfMonitor } from '../utils/performanceMonitor';
 
-type View = 'home' | 'assessment' | 'learning' | 'resources' | 'progress' | 'about' | 'help' | 'data';
+type View = 'home' | 'assessment' | 'learning' | 'resources' | 'progress' | 'about' | 'help' | 'data' | 'aiCoach';
 
 interface UserProfile {
   priority: string;
@@ -240,6 +241,36 @@ const DigitalSkillsCoach: React.FC = () => {
     return <HumanHelpRequest onBack={() => setCurrentView('learning')} userPostcode={userProfile?.postcode} />;
   }
 
+  if (currentView === 'aiCoach') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <StorageWarning />
+        <div className="max-w-7xl mx-auto">
+          <header className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-primary mb-2">AI Learning Coach</h1>
+            <p className="text-xl text-muted-foreground">Your personal guide to digital skills</p>
+          </header>
+          
+          <div className="mb-8">
+            <Button
+              onClick={() => setCurrentView('learning')}
+              variant="outline"
+              className="mb-4"
+            >
+              ← Back to Learning
+            </Button>
+          </div>
+
+          <AICoach 
+            assessmentData={userProfile}
+            currentProgress={completedModules}
+            userContext="Digital skills learning journey"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <OfflineIndicator />
@@ -437,13 +468,21 @@ const DigitalSkillsCoach: React.FC = () => {
                 >
                   About Us
                 </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => setCurrentView('home')}
-                  className="focus:ring-4 focus:ring-primary/20 focus:outline-none"
-                >
-                  Back to Home
-                </Button>
+                 <Button 
+                   variant="outline"
+                   onClick={() => setCurrentView('home')}
+                   className="focus:ring-4 focus:ring-primary/20 focus:outline-none"
+                 >
+                   Back to Home
+                 </Button>
+                 
+                 <Button
+                   onClick={() => setCurrentView('aiCoach')}
+                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-none focus:ring-4 focus:ring-purple-500/20 focus:outline-none"
+                 >
+                   <MessageSquare className="h-4 w-4 mr-2" />
+                   AI Learning Coach
+                 </Button>
               </div>
             </div>
 

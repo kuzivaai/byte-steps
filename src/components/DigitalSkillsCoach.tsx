@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Heart, Shield, Users, Phone, MessageSquare, Computer, ArrowRight, CheckCircle, Clock, MapPin, HelpCircle } from 'lucide-react';
+import { Heart, Shield, Users, Phone, MessageSquare, Computer, ArrowRight, CheckCircle, Clock, MapPin, HelpCircle, Settings } from 'lucide-react';
 import InitialAssessment from './InitialAssessment';
 import LearningModuleView from './LearningModuleView';
 import LocalResourceFinder from './LocalResourceFinder';
 import PrivacyNotice from './PrivacyNotice';
 import AboutUs from './AboutUs';
 import HumanHelpRequest from './HumanHelpRequest';
+import AccessibilityControls from './AccessibilityControls';
 import { LearningModule } from '../types';
 import { sampleLearningModules } from '../data/sampleData';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -27,6 +28,7 @@ const DigitalSkillsCoach: React.FC = () => {
   const [selectedModule, setSelectedModule] = useState<LearningModule | null>(null);
   const [completedModules, setCompletedModules] = useLocalStorage<string[]>('bytesteps-completed-modules', []);
   const [hasPrivacyConsent, setHasPrivacyConsent] = useState<boolean | null>(null);
+  const [showAccessibilityControls, setShowAccessibilityControls] = useState(false);
 
   const handleAssessmentComplete = (profile: UserProfile) => {
     setUserProfile(profile);
@@ -127,15 +129,31 @@ const DigitalSkillsCoach: React.FC = () => {
       {/* Header */}
       <header className="bg-primary text-primary-foreground py-6" role="banner">
         <div className="container mx-auto px-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Heart className="h-8 w-8" aria-hidden="true" />
-            <h1 className="text-3xl font-bold">Byte Steps</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Heart className="h-8 w-8" aria-hidden="true" />
+              <div>
+                <h1 className="text-3xl font-bold">Byte Steps</h1>
+                <p className="text-lg opacity-90">Learning digital skills, one manageable step at a time</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAccessibilityControls(true)}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              aria-label="Open accessibility settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
           </div>
-          <p className="text-lg opacity-90">
-            Learning digital skills, one manageable step at a time
-          </p>
         </div>
       </header>
+
+      <AccessibilityControls 
+        isOpen={showAccessibilityControls}
+        onClose={() => setShowAccessibilityControls(false)}
+      />
 
       <main id="main-content" className="container mx-auto px-4 py-8" role="main">
         {currentView === 'home' && (

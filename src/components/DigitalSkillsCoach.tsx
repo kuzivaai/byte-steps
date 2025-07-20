@@ -4,15 +4,15 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Heart, Shield, Users, Phone, MessageSquare, Computer, ArrowRight, CheckCircle, Clock, MapPin, HelpCircle, Settings } from 'lucide-react';
 
-// Lazy load heavy components to prevent cascading failures
-const InitialAssessment = React.lazy(() => import('./InitialAssessment'));
-const LearningModuleView = React.lazy(() => import('./LearningModuleView'));
-const LocalResourceFinder = React.lazy(() => import('./LocalResourceFinder'));
-const PrivacyNotice = React.lazy(() => import('./PrivacyNotice'));
-const AboutUs = React.lazy(() => import('./AboutUs'));
-const HumanHelpRequest = React.lazy(() => import('./HumanHelpRequest'));
-const AccessibilityControls = React.lazy(() => import('./AccessibilityControls'));
-const DataManagement = React.lazy(() => import('./DataManagement'));
+// Keep most components synchronous - only lazy load truly heavy ones
+import InitialAssessment from './InitialAssessment';
+const LearningModuleView = React.lazy(() => import('./LearningModuleView')); // Heavy component
+import LocalResourceFinder from './LocalResourceFinder';
+import PrivacyNotice from './PrivacyNotice';
+import AboutUs from './AboutUs';
+import HumanHelpRequest from './HumanHelpRequest';
+import AccessibilityControls from './AccessibilityControls';
+import DataManagement from './DataManagement';
 
 import { LearningModule } from '../types';
 import { sampleLearningModules } from '../data/sampleData';
@@ -69,11 +69,7 @@ const DigitalSkillsCoach: React.FC = () => {
 
   // Show privacy notice if consent hasn't been determined
   if (hasPrivacyConsent === null) {
-    return (
-      <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="text-lg">Loading Privacy Notice...</div></div>}>
-        <PrivacyNotice onAccept={handlePrivacyConsent} />
-      </React.Suspense>
-    );
+    return <PrivacyNotice onAccept={handlePrivacyConsent} />;
   }
 
   const getRecommendedModules = () => {
@@ -98,11 +94,7 @@ const DigitalSkillsCoach: React.FC = () => {
   };
 
   if (currentView === 'assessment') {
-    return (
-      <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="text-lg">Loading Assessment...</div></div>}>
-        <InitialAssessment onComplete={handleAssessmentComplete} />
-      </React.Suspense>
-    );
+    return <InitialAssessment onComplete={handleAssessmentComplete} />;
   }
 
   if (selectedModule) {
@@ -118,38 +110,19 @@ const DigitalSkillsCoach: React.FC = () => {
   }
 
   if (currentView === 'resources') {
-    return (
-      <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="text-lg">Loading Resources...</div></div>}>
-        <LocalResourceFinder
-          userPostcode={userProfile?.postcode}
-          onBack={() => setCurrentView('learning')}
-        />
-      </React.Suspense>
-    );
+    return <LocalResourceFinder userPostcode={userProfile?.postcode} onBack={() => setCurrentView('learning')} />;
   }
 
   if (currentView === 'about') {
-    return (
-      <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="text-lg">Loading About...</div></div>}>
-        <AboutUs onBack={() => setCurrentView('home')} />
-      </React.Suspense>
-    );
+    return <AboutUs onBack={() => setCurrentView('home')} />;
   }
 
   if (currentView === 'data') {
-    return (
-      <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="text-lg">Loading Data Management...</div></div>}>
-        <DataManagement onBack={() => setCurrentView('home')} />
-      </React.Suspense>
-    );
+    return <DataManagement onBack={() => setCurrentView('home')} />;
   }
 
   if (currentView === 'help') {
-    return (
-      <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="text-lg">Loading Help...</div></div>}>
-        <HumanHelpRequest onBack={() => setCurrentView('learning')} userPostcode={userProfile?.postcode} />
-      </React.Suspense>
-    );
+    return <HumanHelpRequest onBack={() => setCurrentView('learning')} userPostcode={userProfile?.postcode} />;
   }
 
   return (
@@ -187,12 +160,10 @@ const DigitalSkillsCoach: React.FC = () => {
         </div>
       </header>
 
-      <React.Suspense fallback={null}>
-        <AccessibilityControls 
-          isOpen={showAccessibilityControls}
-          onClose={() => setShowAccessibilityControls(false)}
-        />
-      </React.Suspense>
+      <AccessibilityControls 
+        isOpen={showAccessibilityControls}
+        onClose={() => setShowAccessibilityControls(false)}
+      />
 
       <main id="main-content" className="container mx-auto px-4 py-8" role="main">
         {currentView === 'home' && (

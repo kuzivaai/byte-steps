@@ -5,8 +5,9 @@ export function useLocalStorage<T>(
   initialValue: T,
   requiresConsent: boolean = true
 ): [T, (value: T | ((prev: T) => T)) => void, () => void] {
-  // Use ref to prevent infinite loops
-  const isInitialized = useRef(false);
+  // Prevent infinite loops with refs
+  const isUpdatingRef = useRef(false);
+  const currentTabIdRef = useRef(Math.random().toString(36));
   
   // Get from local storage then parse stored json or return initialValue
   const [storedValue, setStoredValue] = useState<T>(() => {
@@ -20,19 +21,20 @@ export function useLocalStorage<T>(
       }
 
       const item = window.localStorage.getItem(key);
-      const result = item ? JSON.parse(item) : initialValue;
-      isInitialized.current = true;
-      return result;
+      return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}":`, error);
-      isInitialized.current = true;
       return initialValue;
     }
   });
 
   // Memoized setValue to prevent recreating on every render
   const setValue = useCallback((value: T | ((prev: T) => T)) => {
+    if (isUpdatingRef.current) return; // Prevent loops
+    
     try {
+      isUpdatingRef.current = true;
+      
       // Allow value to be a function so we have the same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       
@@ -47,10 +49,13 @@ export function useLocalStorage<T>(
         }
       }
       
-      // Save to local storage
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      // Save to local storage with tab identifier to prevent self-triggering
+      const dataWithTabId = { data: valueToStore, tabId: currentTabIdRef.current };
+      window.localStorage.setItem(key, JSON.stringify(dataWithTabId));
     } catch (error) {
       console.warn(`Error setting localStorage key "${key}":`, error);
+    } finally {
+      isUpdatingRef.current = false;
     }
   }, [key, storedValue, requiresConsent]);
 
@@ -64,21 +69,27 @@ export function useLocalStorage<T>(
     }
   }, [key, initialValue]);
 
-  // Listen for changes to this key from other tabs/windows
+  // Listen for changes to this key from other tabs/windows ONLY
   useEffect(() => {
-    if (!isInitialized.current) return;
-    
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === key && e.newValue !== null) {
-        try {
-          const newValue = JSON.parse(e.newValue);
-          setStoredValue(newValue);
-        } catch (error) {
-          console.warn(`Error parsing localStorage value for key "${key}":`, error);
-        }
+      // Only respond to storage events from other tabs
+      if (e.key !== key || e.newValue === null || isUpdatingRef.current) return;
+      
+      try {
+        const parsed = JSON.parse(e.newValue);
+        
+        // Check if this update came from this tab (prevent self-triggering)
+        if (parsed.tabId === currentTabIdRef.current) return;
+        
+        // Extract the actual data
+        const newValue = parsed.data || parsed; // Handle both old and new format
+        setStoredValue(newValue);
+      } catch (error) {
+        console.warn(`Error parsing localStorage value for key "${key}":`, error);
       }
     };
 
+    // Only listen to storage events (cross-tab changes)
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [key]);

@@ -157,12 +157,40 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: unknown
+          user_id: string | null
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address: unknown
+          user_id?: string | null
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: unknown
+          user_id?: string | null
+          window_start?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           consent_given: boolean | null
           consent_timestamp: string | null
           created_at: string | null
           id: string
+          ip_address: unknown | null
           last_active: string | null
           postcode_prefix: string | null
         }
@@ -171,6 +199,7 @@ export type Database = {
           consent_timestamp?: string | null
           created_at?: string | null
           id?: string
+          ip_address?: unknown | null
           last_active?: string | null
           postcode_prefix?: string | null
         }
@@ -179,6 +208,7 @@ export type Database = {
           consent_timestamp?: string | null
           created_at?: string | null
           id?: string
+          ip_address?: unknown | null
           last_active?: string | null
           postcode_prefix?: string | null
         }
@@ -189,7 +219,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_old_rate_limits: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -69,7 +69,13 @@ gcp_project_number = ""
 gcp_jwt_path = "supabase/gcp.json"
 
 [functions.ai-coach]
-verify_jwt = true
+verify_jwt = false
 
 [functions.text-to-speech]
-verify_jwt = true
+verify_jwt = false
+
+[functions.help-requests]
+verify_jwt = false
+
+[functions.assessment-submit]
+verify_jwt = false

@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,39 +9,66 @@ const corsHeaders = {
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
+// Initialize Supabase client for rate limiting
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+async function checkRateLimit(identifier: string, endpoint: string, maxRequests = 10, windowMs = 60000): Promise<boolean> {
+  try {
+    const windowStart = new Date(Date.now() - windowMs);
+    
+    // Check current rate limit
+    const { data: limits, error } = await supabase
+      .from('rate_limits')
+      .select('*')
+      .eq('ip_address', identifier)
+      .eq('endpoint', endpoint)
+      .gte('created_at', windowStart.toISOString());
+
+    if (error) {
+      console.error('Rate limit check error:', error);
+      return true; // Allow on error
+    }
+
+    if (limits && limits.length >= maxRequests) {
+      return false;
+    }
+
+    // Record this request
+    await supabase
+      .from('rate_limits')
+      .insert({
+        ip_address: identifier,
+        endpoint: endpoint,
+        user_id: null
+      });
+
+    return true;
+  } catch (error) {
+    console.error('Rate limiting error:', error);
+    return true; // Allow on error
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Rate limiting
-  const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
-  const rateLimitKey = `ai_coach_${clientIp}`;
+  const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
   
-  // Simple in-memory rate limiting (10 requests per minute)
-  const now = Date.now();
-  const windowMs = 60000; // 1 minute
-  const maxRequests = 10;
-  
-  // In production, use Redis or similar persistent storage
-  if (!globalThis.rateLimitStore) {
-    globalThis.rateLimitStore = new Map();
-  }
-  
-  const userLimit = globalThis.rateLimitStore.get(rateLimitKey);
-  if (userLimit && userLimit.count >= maxRequests && now - userLimit.firstRequest < windowMs) {
-    return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
-      status: 429,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-  
-  // Update rate limit
-  if (!userLimit || now - userLimit.firstRequest > windowMs) {
-    globalThis.rateLimitStore.set(rateLimitKey, { count: 1, firstRequest: now });
-  } else {
-    userLimit.count++;
+  // Check rate limit using database
+  const rateLimitOk = await checkRateLimit(clientIp, 'ai-coach');
+  if (!rateLimitOk) {
+    return new Response(
+      JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+      { 
+        status: 429, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 
   try {

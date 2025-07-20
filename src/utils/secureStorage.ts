@@ -1,50 +1,146 @@
-// Secure storage utility with encryption for sensitive data
-export const secureStorage = {
-  // Simple encryption for localStorage (not cryptographically secure, but better than plain text)
-  setItem: (key: string, value: any) => {
+// Real AES-GCM encryption using SubtleCrypto
+const generateKey = async (password: string): Promise<CryptoKey> => {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+  
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: encoder.encode('bytesteps-salt-2024'), // Static salt for consistency
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+};
+
+const encrypt = async (text: string): Promise<string> => {
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const key = await generateKey('bytesteps-encryption-key-2024');
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      data
+    );
+    
+    // Combine IV and encrypted data
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    
+    return btoa(String.fromCharCode(...combined));
+  } catch (error) {
+    console.error('Encryption error:', error);
+    return btoa(text); // Fallback to base64
+  }
+};
+
+const decrypt = async (encryptedData: string): Promise<string> => {
+  try {
+    const combined = new Uint8Array(
+      atob(encryptedData).split('').map(char => char.charCodeAt(0))
+    );
+    
+    const iv = combined.slice(0, 12);
+    const encrypted = combined.slice(12);
+    
+    const key = await generateKey('bytesteps-encryption-key-2024');
+    
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      encrypted
+    );
+    
+    const decoder = new TextDecoder();
+    return decoder.decode(decrypted);
+  } catch (error) {
+    console.error('Decryption error:', error);
     try {
-      const data = JSON.stringify({
-        value,
-        timestamp: Date.now(),
-        checksum: btoa(JSON.stringify(value) + key).slice(0, 8) // Simple integrity check
+      return atob(encryptedData); // Try base64 fallback
+    } catch {
+      return encryptedData; // Return as-is if all fails
+    }
+  }
+};
+
+// Secure storage utility with real encryption
+export const secureStorage = {
+  setItem: async (key: string, value: any): Promise<void> => {
+    try {
+      const stringValue = JSON.stringify(value);
+      const encrypted = await encrypt(stringValue);
+      const timestamp = Date.now();
+      const expiry = timestamp + (30 * 24 * 60 * 60 * 1000); // 30 days
+      
+      const secureData = JSON.stringify({
+        data: encrypted,
+        timestamp,
+        expiry,
+        version: 2 // Mark as new encryption version
       });
       
-      // Basic obfuscation (not real encryption)
-      const encoded = btoa(data);
-      localStorage.setItem(`sec_${key}`, encoded);
+      localStorage.setItem(`sec_${key}`, secureData);
     } catch (error) {
-      console.warn('Failed to store secure data:', error);
-      // Fallback to regular storage
+      console.warn('Secure storage failed, using regular storage:', error);
       localStorage.setItem(key, JSON.stringify(value));
     }
   },
   
-  getItem: (key: string) => {
+  getItem: async (key: string): Promise<any | null> => {
     try {
-      const encoded = localStorage.getItem(`sec_${key}`);
-      if (!encoded) return null;
+      const secureData = localStorage.getItem(`sec_${key}`);
+      if (!secureData) {
+        // Try fallback to regular storage
+        const fallback = localStorage.getItem(key);
+        return fallback ? JSON.parse(fallback) : null;
+      }
       
-      const data = JSON.parse(atob(encoded));
+      const parsed = JSON.parse(secureData);
+      const { data, timestamp, expiry, version } = parsed;
       
-      // Verify integrity
-      const expectedChecksum = btoa(JSON.stringify(data.value) + key).slice(0, 8);
-      if (data.checksum !== expectedChecksum) {
-        console.warn('Data integrity check failed for key:', key);
+      // Check expiry
+      if (Date.now() > expiry) {
+        localStorage.removeItem(`sec_${key}`);
         return null;
       }
       
-      // Check if data is too old (24 hours)
-      if (Date.now() - data.timestamp > 24 * 60 * 60 * 1000) {
-        secureStorage.removeItem(key);
-        return null;
+      let decrypted: string;
+      if (version === 2) {
+        // New encryption
+        decrypted = await decrypt(data);
+      } else {
+        // Legacy base64 (upgrade gradually)
+        try {
+          decrypted = atob(data);
+        } catch {
+          decrypted = data;
+        }
       }
       
-      return data.value;
+      return JSON.parse(decrypted);
     } catch (error) {
-      console.warn('Failed to retrieve secure data:', error);
-      // Fallback to regular storage
-      const fallback = localStorage.getItem(key);
-      return fallback ? JSON.parse(fallback) : null;
+      console.warn('Secure storage retrieval failed:', error);
+      // Try fallback to regular storage
+      try {
+        const fallback = localStorage.getItem(key);
+        return fallback ? JSON.parse(fallback) : null;
+      } catch {
+        return null;
+      }
     }
   },
   

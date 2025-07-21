@@ -99,6 +99,19 @@ bytesteps/
 - **RLS Policies**: Row-level security on all database tables
 - **Security Headers**: Full CSP, HSTS, and XSS protection
 
+## 🔒 Security Verification
+
+ByteSteps has passed comprehensive security auditing. For detailed security status and verification queries, see [Security Status](docs/SECURITY_STATUS.md).
+
+### Quick Security Check
+```bash
+# Verify no SECURITY DEFINER views (should return 0)
+psql -c "SELECT COUNT(*) FROM pg_views WHERE schemaname = 'public' AND definition ILIKE '%security definer%';"
+```
+
+### Known Platform Issues
+See [Known Issues](docs/KNOWN_ISSUES.md) for Supabase linter false positives and workarounds.
+
 ## 🧪 Testing
 
 ```bash

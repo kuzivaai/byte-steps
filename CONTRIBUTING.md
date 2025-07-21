@@ -103,6 +103,26 @@ npm run test
 - `src/types/`: TypeScript type definitions
 - `supabase/`: Database and edge functions
 
+## Security Considerations
+
+Before submitting PRs that modify database views or functions:
+
+1. Ensure no SECURITY DEFINER is used on views
+2. Set explicit search_path on all functions  
+3. Verify RLS policies don't bypass user isolation
+4. Check rate limiting still applies to anonymous endpoints
+
+See [Security Status](docs/SECURITY_STATUS.md) for verification queries.
+
+### Known Linter Issues
+The Supabase linter may show false positives for SECURITY DEFINER on some views. Verify actual state with:
+```sql
+SELECT COUNT(*) FROM pg_views 
+WHERE schemaname = 'public' 
+AND definition ILIKE '%security definer%';
+```
+If this returns 0, the warnings are false positives.
+
 ## Community
 
 - Join discussions in GitHub Issues
